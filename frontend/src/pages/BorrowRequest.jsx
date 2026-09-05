@@ -9,7 +9,8 @@ import { Search } from 'lucide-react';
 
 const schema = z.object({
     amount: z.coerce.number().positive('Amount must be positive'),
-    reason: z.string().min(3, 'Reason is required')
+    reason: z.string().min(3, 'Reason is required'),
+    dueDate: z.string().optional()
 });
 
 const BorrowRequest = () => {
@@ -60,7 +61,8 @@ const BorrowRequest = () => {
             await borrowRequestService.sendBorrowRequest({
                 lenderId: selectedUser._id,
                 amount: data.amount,
-                reason: data.reason
+                reason: data.reason,
+                dueDate: data.dueDate || undefined
             });
             navigate('/borrower-dashboard');
         } catch (err) {
@@ -78,12 +80,12 @@ const BorrowRequest = () => {
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
-            <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Request a loan</h1>
-            <p className="mt-1 text-gray-500">
+            <h1 className="page-title">Request a loan</h1>
+            <p className="page-sub">
                 Search or pick a registered lender. They will get an email, and an SMS if they saved a phone number.
             </p>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+            <div className="surface p-8">
                 {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded">{error}</div>}
 
                 <div className="mb-6 relative">
@@ -141,6 +143,11 @@ const BorrowRequest = () => {
                     </div>
 
                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Due date (optional)</label>
+                        <input type="date" {...register('dueDate')} className="input" />
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-medium text-gray-700">Reason / Note</label>
                         <textarea
                             {...register('reason')}
@@ -173,7 +180,7 @@ const BorrowRequest = () => {
                             type="button"
                             key={user._id}
                             onClick={() => chooseUser(user)}
-                            className="text-left bg-white rounded-2xl border border-gray-100 p-4 hover:border-emerald-200 transition"
+                            className="text-left surface p-4 hover:shadow-glow transition"
                         >
                             <div className="font-medium">{user.name}</div>
                             <div className="text-sm text-gray-500">{user.email}</div>

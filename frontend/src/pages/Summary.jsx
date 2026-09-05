@@ -32,22 +32,22 @@ const Summary = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Summary</h1>
-                <p className="mt-1 text-gray-500">Outstanding balances grouped by friend.</p>
+                <h1 className="page-title">Summary</h1>
+                <p className="page-sub">Outstanding balances grouped by friend.</p>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
-                <div className="rounded-3xl bg-emerald-50 p-6">
-                    <p className="text-sm text-gray-500">Friends tracked</p>
-                    <p className="mt-2 text-4xl font-semibold text-gray-950">{rows.length}</p>
+                <div className="stat-mint p-6">
+                    <p className="text-sm text-sand-100/70">Friends tracked</p>
+                    <p className="mt-2 font-display text-4xl font-medium">{rows.length}</p>
                 </div>
-                <div className="rounded-3xl bg-emerald-50 p-6">
-                    <p className="text-sm text-gray-500">Total outstanding lent</p>
-                    <p className="mt-2 text-3xl font-semibold text-emerald-900">{formatCurrency(outstandingLent)}</p>
+                <div className="stat-cream p-6">
+                    <p className="text-sm text-moss-800/60">Total outstanding lent</p>
+                    <p className="mt-2 font-display text-3xl font-medium text-moss-900">{formatCurrency(outstandingLent)}</p>
                 </div>
-                <div className="rounded-3xl bg-emerald-50 p-6">
-                    <p className="text-sm text-gray-500">Total outstanding borrowed</p>
-                    <p className="mt-2 text-3xl font-semibold text-rose-600">{formatCurrency(outstandingBorrowed)}</p>
+                <div className="stat-cream p-6">
+                    <p className="text-sm text-moss-800/60">Total outstanding borrowed</p>
+                    <p className="mt-2 font-display text-3xl font-medium text-coral-600">{formatCurrency(outstandingBorrowed)}</p>
                 </div>
             </div>
 
@@ -57,10 +57,10 @@ const Summary = () => {
                 <EmptyState
                     title="No friends tracked yet"
                     message="Add a transaction to see balances here."
-                    action={<Link to="/add" className="inline-flex rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-semibold text-white">Add a transaction</Link>}
+                    action={<Link to="/add" className="btn-primary">Add a transaction</Link>}
                 />
             ) : (
-                <div className="bg-white rounded-3xl border border-gray-100 divide-y divide-gray-100">
+                <div className="surface divide-y divide-sand-200">
                     {rows.map((row) => {
                         const lent = row.outstandingLent || 0;
                         const borrowed = row.outstandingBorrowed || 0;

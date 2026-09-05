@@ -118,9 +118,47 @@ const sendSmtpEmail = async ({ to, subject, text }) => {
     return { status: 'sent' };
 };
 
+const sendSendgridEmail = async ({ to, subject, text, html }) => {
+    const key = process.env.SENDGRID_API_KEY;
+    if (!key) return null;
+
+    const fromRaw = process.env.SENDGRID_FROM || process.env.EMAIL_FROM || process.env.TWILIO_EMAIL_FROM;
+    if (!fromRaw) return null;
+
+    const fromMatch = String(fromRaw).match(/<([^>]+)>/);
+    const fromEmail = fromMatch ? fromMatch[1] : String(fromRaw).trim();
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${key}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            personalizations: [{ to: [{ email: to }] }],
+            from: { email: fromEmail, name: process.env.SENDGRID_FROM_NAME || 'LendLoop' },
+            subject,
+            content: [
+                { type: 'text/plain', value: text },
+                { type: 'text/html', value: html || `<p>${escapeHtml(text)}</p>` }
+            ]
+        })
+    });
+
+    if (!response.ok) {
+        const details = await response.text();
+        throw new Error(details || `SendGrid email failed (${response.status})`);
+    }
+
+    return { status: 'sent' };
+};
+
 const sendEmail = async ({ to, subject, text, html }) => {
     const twilioResult = await sendTwilioEmail({ to, subject, text, html });
     if (twilioResult) return twilioResult;
+
+    const sendgridResult = await sendSendgridEmail({ to, subject, text, html });
+    if (sendgridResult) return sendgridResult;
 
     const smtpResult = await sendSmtpEmail({ to, subject, text });
     if (smtpResult) return smtpResult;
@@ -194,4 +232,19 @@ exports.notifyBorrowRequest = async ({ lender, borrower, amount, reason }) => {
     );
 
     return result;
+};
+
+exports.sendPasswordResetOtp = async (email, otp) => {
+    const text = `Your LendLoop password reset code is ${otp}. It expires in 10 minutes. If you did not request this, ignore this email.`;
+    const html = `
+        <p>Your LendLoop password reset code is:</p>
+        <p style="font-size:28px;font-weight:700;letter-spacing:4px;">${otp}</p>
+        <p>This code expires in 10 minutes.</p>
+    `;
+    return sendEmail({
+        to: email,
+        subject: 'LendLoop password reset code',
+        text,
+        html
+    });
 };

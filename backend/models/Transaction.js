@@ -14,6 +14,33 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         min: [0.01, 'Amount must be greater than 0']
     },
+    amountPaise: {
+        type: Number,
+        min: 1
+    },
+    originalAmount: {
+        type: Number
+    },
+    principalAmount: {
+        type: Number
+    },
+    amountPaid: {
+        type: Number,
+        default: 0
+    },
+    remainingAmount: {
+        type: Number
+    },
+    paidPaise: {
+        type: Number,
+        default: 0
+    },
+    remainingPaise: {
+        type: Number
+    },
+    dueDate: {
+        type: Date
+    },
     date: {
         type: Date,
         required: true,
@@ -45,6 +72,19 @@ const transactionSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+transactionSchema.set('toJSON', {
+    transform: (_doc, ret) => {
+        ret.principalAmount = ret.principalAmount ?? ret.originalAmount ?? ret.amount;
+        ret.amountPaid = ret.amountPaid ?? 0;
+        if (ret.status === 'repaid') {
+            ret.remainingAmount = 0;
+        } else {
+            ret.remainingAmount = ret.remainingAmount ?? ret.principalAmount;
+        }
+        return ret;
+    }
 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

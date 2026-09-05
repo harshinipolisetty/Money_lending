@@ -28,8 +28,8 @@ const RepaymentHistory = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Repayment history</h1>
-            <p className="text-gray-500">Requests where you are the borrower or the lender.</p>
+            <h1 className="page-title">Repayment history</h1>
+            <p className="page-sub">Requests where you are the borrower or the lender.</p>
             {items.length === 0 ? (
                 <EmptyState title="No repayment history yet" />
             ) : (

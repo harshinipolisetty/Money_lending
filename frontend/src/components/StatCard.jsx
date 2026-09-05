@@ -1,13 +1,20 @@
 import React from 'react';
 
 const StatCard = ({ title, value, hint, tone = 'mint' }) => {
-    const bg = tone === 'owe' ? 'bg-white border border-gray-100' : 'bg-emerald-50';
-    const valueColor = tone === 'owe' ? 'text-rose-600' : 'text-emerald-900';
+    if (tone === 'owe') {
+        return (
+            <div className="stat-cream p-6">
+                <p className="text-sm text-moss-800/60">{title}</p>
+                <p className="mt-3 font-display text-3xl font-medium text-coral-600">{value}</p>
+                {hint && <p className="mt-1 text-sm text-moss-800/55">{hint}</p>}
+            </div>
+        );
+    }
     return (
-        <div className={`rounded-3xl p-6 ${bg}`}>
-            <p className="text-sm text-gray-500">{title}</p>
-            <p className={`mt-3 text-3xl font-semibold ${valueColor}`}>{value}</p>
-            {hint && <p className="mt-1 text-sm text-gray-500">{hint}</p>}
+        <div className="stat-mint p-6">
+            <p className="text-sm text-sand-100/70">{title}</p>
+            <p className="mt-3 font-display text-3xl font-medium">{value}</p>
+            {hint && <p className="mt-1 text-sm text-sand-100/65">{hint}</p>}
         </div>
     );
 };

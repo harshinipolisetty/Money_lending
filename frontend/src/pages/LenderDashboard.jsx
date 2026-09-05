@@ -12,6 +12,7 @@ import EmptyState from '../components/EmptyState';
 import StatusBadge from '../components/StatusBadge';
 import QRModal from '../components/QRModal';
 import ConfirmModal from '../components/ConfirmModal';
+import { remainingOf } from '../utils/loan';
 
 const LenderDashboard = () => {
     const [requests, setRequests] = useState([]);
@@ -25,14 +26,20 @@ const LenderDashboard = () => {
 
     const load = async () => {
         try {
-            const [received, pending, lentTx] = await Promise.all([
+            const [received, pending, lentRes] = await Promise.allSettled([
                 borrowRequestService.getReceivedRequests(),
                 repaymentService.getPendingRepayments(),
-                transactionService.getTransactionsByType('lent')
+                transactionService.getTransactions({ type: 'lent', limit: 200 })
             ]);
-            setRequests(received.data || []);
-            setPendingRepayments(pending.data || []);
-            setLent(lentTx.data || []);
+            const value = (result) => (result.status === 'fulfilled' ? result.value.data || [] : []);
+            setRequests(value(received));
+            setPendingRepayments(value(pending));
+            setLent(value(lentRes).filter((t) => t.type === 'lent'));
+            if ([received, pending, lentRes].some((r) => r.status === 'rejected')) {
+                setError('Some lender data could not be loaded. Saved lent transactions still appear below if they loaded.');
+            } else {
+                setError('');
+            }
         } catch (err) {
             setError('Failed to load lender dashboard');
         } finally {
@@ -72,9 +79,9 @@ const LenderDashboard = () => {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Lender</h1>
-                <p className="mt-1 text-gray-500">Review borrow requests and repayment approvals.</p>
-                <Link to="/repayment-history" className="text-sm font-medium text-emerald-800 hover:underline">
+                <h1 className="page-title">Lender</h1>
+                <p className="page-sub">Review borrow requests and repayment approvals.</p>
+                <Link to="/repayment-history" className="text-sm font-semibold text-gold-600 hover:underline">
                     View repayment history
                 </Link>
             </div>
@@ -84,7 +91,7 @@ const LenderDashboard = () => {
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold">Pending repayment approvals</h2>
                 {pendingRepayments.length === 0 ? (
-                    <EmptyState title="No pending repayments" />
+                    <EmptyState compact title="No pending repayments" />
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
                         {pendingRepayments.map((item) => (
@@ -108,7 +115,7 @@ const LenderDashboard = () => {
                                         Reject
                                     </button>
                                     <button
-                                        className="flex-1 py-2 bg-emerald-900 text-white rounded-full"
+                                        className="flex-1 py-2 btn-primary rounded-full"
                                         disabled={actionLoading === item._id}
                                         onClick={() =>
                                             setConfirm({
@@ -131,7 +138,7 @@ const LenderDashboard = () => {
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold">Borrow requests</h2>
                 {requests.length === 0 ? (
-                    <EmptyState title="No received requests" />
+                    <EmptyState compact title="No received requests" />
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {requests.map((req) => (
@@ -181,7 +188,7 @@ const LenderDashboard = () => {
                                                     action: () => borrowRequestService.acceptRequest(req._id)
                                                 })
                                             }
-                                            className="flex-1 py-2 bg-emerald-900 text-white rounded-full inline-flex justify-center items-center"
+                                            className="flex-1 py-2 btn-primary rounded-full inline-flex justify-center items-center"
                                         >
                                             <Check size={16} className="mr-1" /> Accept
                                         </button>
@@ -200,25 +207,40 @@ const LenderDashboard = () => {
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold">Money you lent</h2>
                 {lent.length === 0 ? (
-                    <EmptyState title="No lent transactions" />
+                    <EmptyState compact title="No lent transactions yet" message="Add a lent transaction or accept a borrow request." />
                 ) : (
-                    <div className="table-wrap overflow-hidden">
+                    <div className="table-wrap overflow-x-auto">
                         <table className="data-table">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Borrower</th>
-                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Amount</th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Friend</th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Original</th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Remaining</th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Due</th>
                                     <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Repaid</th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500"></th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
                                 {lent.map((t) => (
                                     <tr key={t._id}>
                                         <td className="px-4 py-3">{t.friendName || t.otherUser?.name}</td>
-                                        <td className="px-4 py-3">{formatCurrency(t.amount)}</td>
-                                        <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(t.repaymentDate)}</td>
+                                        <td className="px-4 py-3">{formatCurrency(t.originalAmount || t.amount)}</td>
+                                        <td className="px-4 py-3">{formatCurrency(t.status === 'repaid' ? 0 : remainingOf(t))}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(t.dueDate)}</td>
+                                        <td className="px-4 py-3">
+                                            <StatusBadge status={t.status} amountPaid={t.amountPaid} />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {t.status !== 'repaid' && (
+                                                <Link
+                                                    to={`/edit-transaction/${t._id}`}
+                                                    className="text-sm font-medium text-emerald-800 hover:underline"
+                                                >
+                                                    Record payment
+                                                </Link>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

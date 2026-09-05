@@ -71,11 +71,11 @@ const Profile = () => {
     return (
         <div className="space-y-8 max-w-4xl">
             <div>
-                <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Profile</h1>
-                <p className="mt-1 text-gray-500">Account details and UPI.</p>
+                <h1 className="page-title">Profile</h1>
+                <p className="page-sub">Account details and UPI.</p>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 p-6">
+            <div className="surface p-6">
                 <h2 className="text-lg font-semibold mb-4">Account</h2>
                 <dl className="grid sm:grid-cols-2 gap-4 text-sm">
                     <div>
@@ -94,13 +94,13 @@ const Profile = () => {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-4">
-                <StatCard label="Transactions" value={stats.total} />
-                <StatCard label="Lent" value={formatCurrency(stats.lent)} />
-                <StatCard label="Borrowed" value={formatCurrency(stats.borrowed)} />
-                <StatCard label="Open loans" value={stats.active} />
+                <StatCard title="Transactions" value={stats.total} />
+                <StatCard title="Lent" value={formatCurrency(stats.lent)} />
+                <StatCard title="Borrowed" value={formatCurrency(stats.borrowed)} tone="owe" />
+                <StatCard title="Open loans" value={stats.active} />
             </div>
 
-            <form onSubmit={saveUpi} className="bg-white rounded-3xl border border-gray-100 p-6 space-y-4">
+            <form onSubmit={saveUpi} className="surface p-6 space-y-4">
                 <h2 className="text-lg font-semibold">UPI details</h2>
                 {message && <p className="text-sm text-blue-700">{message}</p>}
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -132,18 +132,18 @@ const Profile = () => {
                 </div>
             </form>
 
-            <div className="bg-white rounded-3xl border border-gray-100 p-6">
+            <div className="surface p-6">
                 <h2 className="text-lg font-semibold mb-4">Quick actions</h2>
                 <div className="flex flex-wrap gap-3">
-                    <Link to="/add" className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-semibold text-white">Add transaction</Link>
-                    <Link to="/borrow-request" className="rounded-full bg-white border border-gray-200 px-5 py-2.5 text-sm font-medium">Request a loan</Link>
-                    <Link to="/transactions" className="rounded-full bg-white border border-gray-200 px-5 py-2.5 text-sm font-medium">My transactions</Link>
+                    <Link to="/add" className="btn-primary">Add transaction</Link>
+                    <Link to="/borrow-request" className="btn-ghost border border-sand-200">Request a loan</Link>
+                    <Link to="/transactions" className="btn-ghost border border-sand-200">My transactions</Link>
                     <button
                         onClick={() => {
                             logout();
                             navigate('/login');
                         }}
-                        className="rounded-full border border-red-200 text-red-600 px-5 py-2.5 text-sm font-medium"
+                        className="btn-danger"
                     >
                         Logout
                     </button>

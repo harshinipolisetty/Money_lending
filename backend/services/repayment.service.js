@@ -1,5 +1,8 @@
 const RepaymentRequest = require('../models/RepaymentRequest');
 const Transaction = require('../models/Transaction');
+const User = require('../models/User');
+const { toPaise, fromPaise } = require('../utils/money');
+const { notifyUser, formatInr } = require('./inAppNotification.service');
 
 const populateFields = [
     { path: 'transaction' },
@@ -7,7 +10,13 @@ const populateFields = [
     { path: 'lender', select: 'name email phone upiId qrCode' }
 ];
 
-exports.createRepaymentRequest = async (borrowerId, transactionId, note) => {
+const remainingPaiseOf = (tx) => {
+    if (tx.status === 'repaid') return 0;
+    if (tx.remainingPaise != null) return tx.remainingPaise;
+    return toPaise(tx.remainingAmount ?? tx.amount) || 0;
+};
+
+exports.createRepaymentRequest = async (borrowerId, transactionId, note, amount) => {
     const transaction = await Transaction.findOne({
         _id: transactionId,
         owner: borrowerId
@@ -37,16 +46,41 @@ exports.createRepaymentRequest = async (borrowerId, transactionId, note) => {
         throw new Error('A repayment request is already pending for this transaction');
     }
 
+    const remainingPaise = remainingPaiseOf(transaction);
+    const payPaise = amount != null && amount !== '' ? toPaise(amount) : remainingPaise;
+    if (!payPaise) {
+        throw new Error('Repayment amount must be greater than 0');
+    }
+    if (payPaise > remainingPaise) {
+        throw new Error('Repayment cannot exceed the remaining balance');
+    }
+
     const repayment = await RepaymentRequest.create({
         transaction: transaction._id,
         borrower: borrowerId,
         lender: transaction.otherUser,
-        amount: transaction.amount,
+        amount: fromPaise(payPaise),
         note
     });
 
     transaction.status = 'pending_approval';
     await transaction.save();
+
+    const borrower = await User.findById(borrowerId);
+    notifyUser({
+        user: transaction.otherUser,
+        type: 'repayment_received',
+        title: `${formatInr(fromPaise(payPaise))} repayment received`,
+        message: `${borrower?.name || 'A borrower'} sent a repayment request.`,
+        relatedTransaction: transaction._id
+    });
+    notifyUser({
+        user: borrowerId,
+        type: 'payment_recorded',
+        title: `${formatInr(fromPaise(payPaise))} repayment sent`,
+        message: 'Waiting for the lender to approve.',
+        relatedTransaction: transaction._id
+    });
 
     return repayment.populate(populateFields);
 };
@@ -65,8 +99,8 @@ exports.getHistory = async (userId) => {
         .sort({ requestDate: -1 });
 };
 
-const markLinkedTransactions = async (transaction, status, repaymentDate) => {
-    const filter = transaction.borrowRequest
+const linkedFilter = (transaction) =>
+    transaction.borrowRequest
         ? { borrowRequest: transaction.borrowRequest }
         : {
             $or: [
@@ -74,17 +108,28 @@ const markLinkedTransactions = async (transaction, status, repaymentDate) => {
                 {
                     owner: transaction.otherUser,
                     otherUser: transaction.owner,
-                    amount: transaction.amount,
                     type: transaction.type === 'borrowed' ? 'lent' : 'borrowed',
                     status: { $in: ['active', 'pending_approval'] }
                 }
             ]
         };
 
-    await Transaction.updateMany(filter, {
-        status,
-        repaymentDate: repaymentDate || null
-    });
+const applyApprovedPayment = async (transaction, payPaise) => {
+    const docs = await Transaction.find(linkedFilter(transaction));
+    for (const doc of docs) {
+        const remainingPaise = remainingPaiseOf(doc);
+        const paidPaise = doc.paidPaise != null ? doc.paidPaise : toPaise(doc.amountPaid || 0) || 0;
+        const nextRemaining = Math.max(0, remainingPaise - payPaise);
+        const nextPaid = paidPaise + Math.min(payPaise, remainingPaise);
+        const fullyPaid = nextRemaining <= 0;
+        doc.remainingPaise = nextRemaining;
+        doc.paidPaise = nextPaid;
+        doc.remainingAmount = fromPaise(nextRemaining);
+        doc.amountPaid = fromPaise(nextPaid);
+        doc.status = fullyPaid ? 'repaid' : 'active';
+        doc.repaymentDate = fullyPaid ? new Date() : null;
+        await doc.save();
+    }
 };
 
 exports.approveRepayment = async (repaymentId, lenderId) => {
@@ -101,11 +146,24 @@ exports.approveRepayment = async (repaymentId, lenderId) => {
         throw new Error('Linked transaction not found');
     }
 
+    const payPaise = toPaise(repayment.amount);
+    if (!payPaise) {
+        throw new Error('Invalid repayment amount');
+    }
+
     repayment.status = 'approved';
     repayment.responseDate = Date.now();
     await repayment.save();
 
-    await markLinkedTransactions(transaction, 'repaid', new Date());
+    await applyApprovedPayment(transaction, payPaise);
+
+    notifyUser({
+        user: repayment.borrower,
+        type: 'repayment_approved',
+        title: `${formatInr(repayment.amount)} repayment approved`,
+        message: 'Your repayment was confirmed.',
+        relatedTransaction: repayment.transaction
+    });
 
     return repayment.populate(populateFields);
 };
@@ -126,6 +184,14 @@ exports.rejectRepayment = async (repaymentId, lenderId) => {
     await Transaction.findByIdAndUpdate(repayment.transaction, {
         status: 'active',
         repaymentDate: null
+    });
+
+    notifyUser({
+        user: repayment.borrower,
+        type: 'repayment_rejected',
+        title: `${formatInr(repayment.amount)} repayment was not approved`,
+        message: 'Your repayment request was declined. The remaining balance is still due.',
+        relatedTransaction: repayment.transaction
     });
 
     return repayment.populate(populateFields);

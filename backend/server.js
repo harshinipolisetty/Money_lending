@@ -1,3 +1,4 @@
+const http = require('http');
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -5,6 +6,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error.middleware');
+const { initSocket } = require('./socket');
 
 dotenv.config();
 connectDB();
@@ -61,6 +63,7 @@ app.use('/api/borrow-requests', require('./routes/borrowRequest.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/repayments', require('./routes/repayment.routes'));
 app.use('/api/friends', require('./routes/friends.routes'));
+app.use('/api/notifications', require('./routes/inAppNotification.routes'));
 
 app.get('/', (req, res) => {
     res.json({
@@ -76,7 +79,9 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+initSocket(server, isAllowedOrigin);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

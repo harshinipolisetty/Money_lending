@@ -18,27 +18,27 @@ const QRModal = ({ open, onClose, user, title }) => {
     const payload = upiPayload(user);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-[2px] p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-7 relative shadow-xl">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-moss-950/40 backdrop-blur-sm p-4">
+            <div className="surface max-w-md w-full p-7 relative shadow-lift">
+                <button onClick={onClose} className="absolute top-4 right-4 text-moss-800/50 hover:text-moss-900">
                     <X size={20} />
                 </button>
-                <h2 className="text-xl font-semibold text-gray-950 mb-6">{title || 'Pay with QR'}</h2>
+                <h2 className="font-display text-2xl text-moss-900 mb-6">{title || 'Pay with QR'}</h2>
                 <dl className="space-y-2 text-sm mb-6">
                     <div>
-                        <dt className="text-gray-500">Name</dt>
-                        <dd className="font-medium">{user.name || '—'}</dd>
+                        <dt className="text-moss-800/55">Name</dt>
+                        <dd className="font-semibold text-moss-900">{user.name || '—'}</dd>
                     </div>
                     <div>
-                        <dt className="text-gray-500">Phone</dt>
-                        <dd className="font-medium">{user.phone || '—'}</dd>
+                        <dt className="text-moss-800/55">Phone</dt>
+                        <dd className="font-semibold text-moss-900">{user.phone || '—'}</dd>
                     </div>
                     <div>
-                        <dt className="text-gray-500">UPI ID</dt>
-                        <dd className="font-medium">{user.upiId || 'Not provided'}</dd>
+                        <dt className="text-moss-800/55">UPI ID</dt>
+                        <dd className="font-semibold text-moss-900">{user.upiId || 'Not provided'}</dd>
                     </div>
                 </dl>
-                <div className="rounded-2xl bg-emerald-50/60 p-4">
+                <div className="rounded-2xl bg-moss-50 p-4">
                     {user.qrCode ? (
                         <img src={user.qrCode} alt="UPI QR code" className="mx-auto w-52 h-52 object-contain" />
                     ) : payload ? (

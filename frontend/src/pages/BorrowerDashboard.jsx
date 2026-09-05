@@ -11,6 +11,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import StatusBadge from '../components/StatusBadge';
 import QRModal from '../components/QRModal';
+import { remainingOf, isOverdue } from '../utils/loan';
 
 const BorrowerDashboard = () => {
     const [requests, setRequests] = useState([]);
@@ -19,17 +20,18 @@ const BorrowerDashboard = () => {
     const [error, setError] = useState('');
     const [note, setNote] = useState('');
     const [selectedTx, setSelectedTx] = useState(null);
+    const [repayAmount, setRepayAmount] = useState('');
     const [qrUser, setQrUser] = useState(null);
     const [busy, setBusy] = useState(false);
 
     const load = async () => {
         try {
-            const [sent, tx] = await Promise.all([
+            const [sent, tx] = await Promise.allSettled([
                 borrowRequestService.getSentRequests(),
-                transactionService.getTransactionsByType('borrowed')
+                transactionService.getTransactions({ type: 'borrowed', limit: 200 })
             ]);
-            setRequests(sent.data || []);
-            setBorrowed(tx.data || []);
+            setRequests(sent.status === 'fulfilled' ? sent.value.data || [] : []);
+            setBorrowed(tx.status === 'fulfilled' ? tx.value.data || [] : []);
         } catch (err) {
             setError('Failed to fetch borrower dashboard');
         } finally {
@@ -66,7 +68,11 @@ const BorrowerDashboard = () => {
         if (!selectedTx) return;
         setBusy(true);
         try {
-            await repaymentService.requestRepayment({ transactionId: selectedTx._id, note });
+            await repaymentService.requestRepayment({
+                transactionId: selectedTx._id,
+                note,
+                amount: Number(repayAmount)
+            });
             setSelectedTx(null);
             setNote('');
             await load();
@@ -83,7 +89,7 @@ const BorrowerDashboard = () => {
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Borrower</h1>
+                    <h1 className="page-title">Borrower</h1>
                     <p className="mt-1 text-gray-500">Sent requests, borrowed money, and UPI QR codes.</p>
                     <Link to="/repayment-history" className="text-sm font-medium text-emerald-800 hover:underline">
                         View repayment history
@@ -91,7 +97,7 @@ const BorrowerDashboard = () => {
                 </div>
                 <Link
                     to="/borrow-request"
-                    className="inline-flex items-center gap-2 rounded-full bg-emerald-900 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+                    className="btn-primary"
                 >
                     <Send className="-ml-1 mr-2 h-5 w-5" />
                     Send request
@@ -103,7 +109,7 @@ const BorrowerDashboard = () => {
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold">Borrowed money</h2>
                 {borrowed.length === 0 ? (
-                    <EmptyState title="No borrowed transactions" />
+                    <EmptyState compact title="No borrowed transactions" />
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
                         {borrowed.map((t) => (
@@ -112,7 +118,15 @@ const BorrowerDashboard = () => {
                                     <h3 className="font-semibold">{t.friendName || t.otherUser?.name}</h3>
                                     <StatusBadge status={t.status} />
                                 </div>
-                                <p className="text-3xl font-semibold text-rose-600 my-2">{formatCurrency(t.amount)}</p>
+                                <p className="text-3xl font-semibold text-rose-600 my-2">{formatCurrency(remainingOf(t) || t.amount)}</p>
+                                {remainingOf(t) !== Number(t.amount) && t.status !== 'repaid' && (
+                                    <p className="text-sm text-gray-500">Original {formatCurrency(t.amount)}</p>
+                                )}
+                                {t.dueDate && (
+                                    <p className={`text-sm ${isOverdue(t) ? 'text-rose-600' : 'text-gray-500'}`}>
+                                        Due {formatDate(t.dueDate)}{isOverdue(t) ? ' (overdue)' : ''}
+                                    </p>
+                                )}
                                 {t.repaymentDate && (
                                     <p className="text-sm text-gray-500">Repaid on {formatDate(t.repaymentDate)}</p>
                                 )}
@@ -132,7 +146,10 @@ const BorrowerDashboard = () => {
                                     )}
                                     {t.status === 'active' && t.otherUser && (
                                         <button
-                                            onClick={() => setSelectedTx(t)}
+                                            onClick={() => {
+                                                setSelectedTx(t);
+                                                setRepayAmount(String(remainingOf(t)));
+                                            }}
                                             className="btn-primary text-sm py-2"
                                         >
                                             Mark as paid
@@ -200,8 +217,16 @@ const BorrowerDashboard = () => {
                     <form onSubmit={submitRepayment} className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl">
                         <h3 className="text-lg font-bold">Mark as paid</h3>
                         <p className="text-sm text-gray-600">
-                            Request approval for {formatCurrency(selectedTx.amount)} to {selectedTx.friendName || selectedTx.otherUser?.name}.
+                            Remaining {formatCurrency(remainingOf(selectedTx))} to {selectedTx.friendName || selectedTx.otherUser?.name}.
                         </p>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            value={repayAmount}
+                            onChange={(e) => setRepayAmount(e.target.value)}
+                            className="w-full border rounded-md px-3 py-2 text-sm"
+                        />
                         <textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}

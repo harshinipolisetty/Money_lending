@@ -18,11 +18,13 @@ import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 
 const Layout = () => (
-    <div className="min-h-screen bg-[#f7fbf9] flex flex-col">
-        <Navbar />
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
-            <Outlet />
-        </main>
+    <div className="app-frame">
+        <div className="relative z-10 min-h-screen">
+            <Navbar />
+            <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20">
+                <Outlet />
+            </main>
+        </div>
     </div>
 );
 

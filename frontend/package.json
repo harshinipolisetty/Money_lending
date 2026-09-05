@@ -20,6 +20,7 @@
     "react-qr-code": "^2.0.12",
     "react-router-dom": "^6.23.0",
     "recharts": "^2.12.7",
+    "socket.io-client": "^4.8.3",
     "zod": "^3.23.6"
   },
   "devDependencies": {

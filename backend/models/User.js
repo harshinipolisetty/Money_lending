@@ -29,6 +29,14 @@ const userSchema = new mongoose.Schema({
     },
     qrCode: {
         type: String
+    },
+    resetOtpHash: {
+        type: String,
+        select: false
+    },
+    resetOtpExpires: {
+        type: Date,
+        select: false
     }
 }, {
     timestamps: true

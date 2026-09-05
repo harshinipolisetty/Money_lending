@@ -1,9 +1,11 @@
 const BorrowRequest = require('../models/BorrowRequest');
 const Transaction = require('../models/Transaction');
 const User = require('../models/User');
+const { loanSnapshot } = require('../utils/money');
 const { notifyBorrowRequest } = require('./notification.service');
+const { notifyUser, formatInr } = require('./inAppNotification.service');
 
-exports.createBorrowRequest = async (borrowerId, lenderId, amount, reason) => {
+exports.createBorrowRequest = async (borrowerId, lenderId, amount, reason, dueDate) => {
     if (borrowerId.toString() === lenderId.toString()) {
         throw new Error('You cannot borrow from yourself');
     }
@@ -21,7 +23,15 @@ exports.createBorrowRequest = async (borrowerId, lenderId, amount, reason) => {
         borrower: borrowerId,
         lender: lenderId,
         amount,
-        reason
+        reason,
+        dueDate: dueDate || undefined
+    });
+
+    notifyUser({
+        user: lenderId,
+        type: 'borrow_request',
+        title: `New borrow request from ${borrower?.name || 'a friend'}`,
+        message: `${formatInr(amount)}${reason ? ` · ${reason}` : ''}`
     });
 
     notifyBorrowRequest({
@@ -69,28 +79,39 @@ exports.acceptRequest = async (requestId, lenderId) => {
     request.respondedAt = Date.now();
     await request.save();
 
+    const snapshot = loanSnapshot(request.amount);
+
+    notifyUser({
+        user: request.borrower,
+        type: 'borrow_accepted',
+        title: `${lender?.name || 'Lender'} accepted your borrow request`,
+        message: `${formatInr(request.amount)} is now on your borrower dashboard.`
+    });
+
     await Transaction.create([
         {
             owner: lenderId,
             friendName: borrower?.name,
             otherUser: request.borrower,
-            amount: request.amount,
             type: 'lent',
             status: 'active',
             borrowRequest: request._id,
             note: request.reason,
-            date: Date.now()
+            date: Date.now(),
+            dueDate: request.dueDate,
+            ...snapshot
         },
         {
             owner: request.borrower,
             friendName: lender?.name,
             otherUser: lenderId,
-            amount: request.amount,
             type: 'borrowed',
             status: 'active',
             borrowRequest: request._id,
             note: request.reason,
-            date: Date.now()
+            date: Date.now(),
+            dueDate: request.dueDate,
+            ...snapshot
         }
     ]);
 
@@ -111,6 +132,14 @@ exports.rejectRequest = async (requestId, lenderId) => {
     request.status = 'rejected';
     request.respondedAt = Date.now();
     await request.save();
+
+    const lender = await User.findById(lenderId);
+    notifyUser({
+        user: request.borrower,
+        type: 'borrow_rejected',
+        title: `${lender?.name || 'Lender'} declined your borrow request`,
+        message: `${formatInr(request.amount)} was not approved.`
+    });
 
     return request;
 };

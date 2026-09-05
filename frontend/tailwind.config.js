@@ -7,37 +7,38 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: {
-          DEFAULT: '#161310',
-          muted: '#6f675f',
-          soft: '#9a9288'
+        moss: {
+          50: '#f3f8f4',
+          100: '#e4f0e8',
+          200: '#c5dccb',
+          700: '#1f6b52',
+          800: '#155544',
+          900: '#0d3b31',
+          950: '#08251f'
         },
-        paper: {
-          DEFAULT: '#f4f0ea',
-          raised: '#fbf9f6',
-          line: '#ddd6cb'
+        sand: {
+          50: '#fffdf8',
+          100: '#f7f1e6',
+          200: '#eadfcd'
         },
-        pine: {
-          DEFAULT: '#2a241f',
-          dark: '#1a1613',
-          light: '#3d352e'
+        gold: {
+          400: '#e0c27a',
+          500: '#c9a24a',
+          600: '#a9842e'
         },
-        marigold: {
-          DEFAULT: '#b89463',
-          dark: '#9a7849'
-        },
-        clay: '#8a4a42'
+        coral: {
+          500: '#c45c4a',
+          600: '#a94838'
+        }
       },
       fontFamily: {
-        display: ['Inter', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif']
+        display: ['Fraunces', 'Georgia', 'serif'],
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
       },
       boxShadow: {
-        lift: '0 20px 40px -28px rgba(26, 22, 19, 0.55)',
-        card: '0 1px 0 rgba(255,255,255,0.8) inset, 0 10px 30px -20px rgba(22, 19, 16, 0.28)'
-      },
-      letterSpacing: {
-        luxury: '0.28em'
+        lift: '0 30px 60px -36px rgba(13, 59, 49, 0.45)',
+        card: '0 1px 0 rgba(255,255,255,0.85) inset, 0 18px 40px -28px rgba(13, 59, 49, 0.28)',
+        glow: '0 0 0 1px rgba(201, 162, 74, 0.22), 0 16px 40px -24px rgba(13, 59, 49, 0.4)'
       }
     },
   },

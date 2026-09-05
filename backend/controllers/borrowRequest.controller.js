@@ -16,7 +16,8 @@ exports.createRequest = async (req, res, next) => {
             req.user.userId,
             lenderId,
             amount,
-            reason
+            reason,
+            req.body.dueDate
         );
 
         res.status(201).json({ success: true, data: request });

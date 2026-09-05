@@ -16,6 +16,9 @@ const borrowRequestSchema = new mongoose.Schema({
         required: true,
         min: [0.01, 'Amount must be greater than 0']
     },
+    dueDate: {
+        type: Date
+    },
     reason: {
         type: String,
         required: true

@@ -2,7 +2,7 @@ const repaymentService = require('../services/repayment.service');
 
 exports.requestRepayment = async (req, res, next) => {
     try {
-        const { transactionId, note } = req.body;
+        const { transactionId, note, amount } = req.body;
         if (!transactionId) {
             return res.status(400).json({ success: false, message: 'Transaction ID is required' });
         }
@@ -10,7 +10,8 @@ exports.requestRepayment = async (req, res, next) => {
         const repayment = await repaymentService.createRepaymentRequest(
             req.user.userId,
             transactionId,
-            note
+            note,
+            amount
         );
 
         res.status(201).json({

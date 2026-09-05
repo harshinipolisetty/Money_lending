@@ -4,15 +4,15 @@ const ConfirmModal = ({ open, title, message, confirmLabel = 'Confirm', onConfir
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-[2px] p-4">
-            <div className="bg-white rounded-3xl max-w-sm w-full p-7 shadow-xl">
-                <h3 className="text-xl font-semibold text-gray-950">{title}</h3>
-                <p className="mt-2 text-sm text-gray-500">{message}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-moss-950/40 backdrop-blur-sm p-4">
+            <div className="surface max-w-sm w-full p-7 shadow-lift">
+                <h3 className="font-display text-2xl text-moss-900">{title}</h3>
+                <p className="mt-2 text-sm text-moss-800/70">{message}</p>
                 <div className="mt-6 flex justify-end gap-3">
-                    <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-gray-600">
+                    <button onClick={onCancel} className="btn-ghost">
                         Cancel
                     </button>
-                    <button onClick={onConfirm} className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-white">
+                    <button onClick={onConfirm} className="btn-primary">
                         {confirmLabel}
                     </button>
                 </div>

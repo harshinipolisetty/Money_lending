@@ -5,7 +5,7 @@ const transactionService = require('../services/transaction.service');
 // @access  Private
 exports.createTransaction = async (req, res, next) => {
     try {
-        const { friendName, amount, date, note, type, otherUser } = req.body;
+        const { friendName, amount, date, note, type, otherUser, dueDate, amountPaid } = req.body;
         
         if (!amount || !type || (!friendName && !otherUser)) {
             return res.status(400).json({ success: false, message: 'Please provide required fields' });
@@ -22,7 +22,9 @@ exports.createTransaction = async (req, res, next) => {
             date: date || Date.now(),
             note,
             type,
-            otherUser
+            otherUser,
+            dueDate,
+            amountPaid
         };
 
         const transaction = await transactionService.createTransaction(data);
@@ -33,6 +35,9 @@ exports.createTransaction = async (req, res, next) => {
             data: transaction
         });
     } catch (error) {
+        if (error.message.includes('Amount paid') || error.message.includes('Amount must')) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
         next(error);
     }
 };
@@ -56,7 +61,13 @@ exports.getTransactions = async (req, res, next) => {
             query.friendName = new RegExp(req.query.friendName, 'i');
         }
 
-        const result = await transactionService.getTransactions(req.user.userId, query, page, limit);
+        const result = await transactionService.getTransactions(
+            req.user.userId,
+            query,
+            page,
+            limit,
+            { sort: req.query.sort, order: req.query.order }
+        );
 
         res.status(200).json({
             success: true,
@@ -131,8 +142,8 @@ exports.getTransaction = async (req, res, next) => {
 // @access  Private
 exports.updateTransaction = async (req, res, next) => {
     try {
-        const { friendName, amount, date, note, type, status } = req.body;
-        const updateData = { friendName, amount, date, note, type, status };
+        const { friendName, amount, date, note, type, dueDate, amountPaid } = req.body;
+        const updateData = { friendName, amount, date, note, type, dueDate, amountPaid };
         
         // Remove undefined fields
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
@@ -145,7 +156,13 @@ exports.updateTransaction = async (req, res, next) => {
             data: transaction
         });
     } catch (error) {
-        if (error.message.includes('not found') || error.message.includes('Cannot edit')) {
+        if (
+            error.message.includes('not found') ||
+            error.message.includes('Cannot') ||
+            error.message.includes('cannot') ||
+            error.message.includes('Linked') ||
+            error.message.includes('Amount paid')
+        ) {
             return res.status(400).json({ success: false, message: error.message });
         }
         next(error);

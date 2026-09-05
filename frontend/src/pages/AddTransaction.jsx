@@ -10,18 +10,18 @@ const schema = z.object({
     amount: z.coerce.number().positive('Amount must be positive'),
     type: z.enum(['lent', 'borrowed']),
     date: z.string().nonempty('Date is required'),
+    dueDate: z.string().optional(),
     note: z.string().optional()
 });
 
-const field =
-    'mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-[15px] text-gray-900 outline-none focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10';
+const field = 'input';
 
 const AddTransaction = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const { register, handleSubmit, formState: { errors } } = useForm({
+    const { register, handleSubmit, watch, formState: { errors } } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
             type: 'lent',
@@ -29,11 +29,16 @@ const AddTransaction = () => {
         }
     });
 
+    const type = watch('type');
+
     const onSubmit = async (data) => {
         setLoading(true);
         setError('');
         try {
-            await transactionService.createTransaction(data);
+            await transactionService.createTransaction({
+                ...data,
+                dueDate: data.dueDate || undefined
+            });
             navigate('/transactions');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to add transaction');
@@ -44,14 +49,23 @@ const AddTransaction = () => {
 
     return (
         <div className="max-w-2xl">
-            <h1 className="text-4xl font-semibold tracking-tight text-gray-950">Add transaction</h1>
-            <p className="mt-1 text-gray-500">Log money you lent outside the app.</p>
+            <h1 className="page-title">Add transaction</h1>
+            <p className="page-sub">
+                {type === 'borrowed' ? 'Log money you borrowed outside the app.' : 'Log money you lent outside the app.'}
+            </p>
 
-            <div className="mt-8 bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+            <div className="mt-8 surface p-8">
                 {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-xl">{error}</div>}
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                    <input type="hidden" {...register('type')} />
+                    <div>
+                        <label className="text-sm font-medium text-gray-800">Type</label>
+                        <select className={field} {...register('type')}>
+                            <option value="lent">Lent</option>
+                            <option value="borrowed">Borrowed</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label className="text-sm font-medium text-gray-800">Friend name</label>
                         <input className={field} placeholder="e.g. Rahul" {...register('friendName')} />
@@ -71,6 +85,13 @@ const AddTransaction = () => {
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-gray-800">Due date (optional)</label>
+                            <input type="date" className={field} {...register('dueDate')} />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="text-sm font-medium text-gray-800">Note (optional)</label>
                         <textarea rows={3} className={field} placeholder="e.g. Dinner split" {...register('note')} />
@@ -80,7 +101,7 @@ const AddTransaction = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                            className="btn-primary"
                         >
                             {loading ? 'Saving...' : 'Save transaction'}
                         </button>
