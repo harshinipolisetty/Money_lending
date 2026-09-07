@@ -34,7 +34,13 @@ const Login = () => {
             await login(data.email, data.password);
             navigate('/dashboard');
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
+            const offline = err.request && !err.response;
+            setError(
+                err.response?.data?.message
+                || (offline
+                    ? 'Cannot reach the API. Start the backend on port 5000, then use http://localhost:5173'
+                    : 'Login failed. Please try again.')
+            );
         } finally {
             setIsLoading(false);
         }
