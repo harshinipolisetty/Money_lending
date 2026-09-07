@@ -1,21 +1,17 @@
 import React from 'react';
 import QRCode from 'react-qr-code';
 import { X } from 'lucide-react';
+import { upiPayUri } from '../utils/sharePay';
 
-const upiPayload = (user) => {
-    if (!user?.upiId) return '';
-    const params = new URLSearchParams({
-        pa: user.upiId,
-        pn: user.name || 'User',
-        cu: 'INR'
-    });
-    return `upi://pay?${params.toString()}`;
-};
-
-const QRModal = ({ open, onClose, user, title }) => {
+const QRModal = ({ open, onClose, user, title, amount, note }) => {
     if (!open || !user) return null;
 
-    const payload = upiPayload(user);
+    const payload = upiPayUri({
+        upiId: user.upiId,
+        name: user.name,
+        amount,
+        note
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-moss-950/40 backdrop-blur-sm p-4">

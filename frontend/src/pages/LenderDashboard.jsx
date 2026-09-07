@@ -12,12 +12,17 @@ import EmptyState from '../components/EmptyState';
 import StatusBadge from '../components/StatusBadge';
 import QRModal from '../components/QRModal';
 import ConfirmModal from '../components/ConfirmModal';
+import SharePaySheet from '../components/SharePaySheet';
+import LoanPayActions from '../components/LoanPayActions';
+import useAuth from '../hooks/useAuth';
 import { remainingOf } from '../utils/loan';
 
 const LenderDashboard = () => {
+    const { user } = useAuth();
     const [requests, setRequests] = useState([]);
     const [pendingRepayments, setPendingRepayments] = useState([]);
     const [lent, setLent] = useState([]);
+    const [share, setShare] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
@@ -218,7 +223,7 @@ const LenderDashboard = () => {
                                     <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Remaining</th>
                                     <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Due</th>
                                     <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500"></th>
+                                    <th className="px-4 py-3 text-left text-xs uppercase text-gray-500">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
@@ -232,14 +237,17 @@ const LenderDashboard = () => {
                                             <StatusBadge status={t.status} amountPaid={t.amountPaid} />
                                         </td>
                                         <td className="px-4 py-3">
-                                            {t.status !== 'repaid' && (
-                                                <Link
-                                                    to={`/edit-transaction/${t._id}`}
-                                                    className="text-sm font-medium text-emerald-800 hover:underline"
-                                                >
-                                                    Record payment
-                                                </Link>
-                                            )}
+                                            <LoanPayActions
+                                                settled={t.status === 'repaid'}
+                                                editTo={`/edit-transaction/${t._id}`}
+                                                onAskToPay={() =>
+                                                    setShare({
+                                                        friendName: t.friendName || t.otherUser?.name,
+                                                        amount: remainingOf(t),
+                                                        note: t.note || `loan with ${t.friendName || 'you'}`
+                                                    })
+                                                }
+                                            />
                                         </td>
                                     </tr>
                                 ))}
@@ -250,6 +258,14 @@ const LenderDashboard = () => {
             </section>
 
             <QRModal open={!!qrUser} onClose={() => setQrUser(null)} user={qrUser} title="Borrower UPI QR" />
+            <SharePaySheet
+                open={!!share}
+                onClose={() => setShare(null)}
+                user={user}
+                friendName={share?.friendName}
+                amount={share?.amount}
+                note={share?.note}
+            />
             <ConfirmModal
                 open={!!confirm}
                 title={confirm?.title}

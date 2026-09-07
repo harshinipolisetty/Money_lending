@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Send, Clock, CheckCircle, XCircle, QrCode } from 'lucide-react';
 import * as borrowRequestService from '../services/borrowRequestService';
 import * as transactionService from '../services/transactionService';
@@ -14,6 +14,7 @@ import QRModal from '../components/QRModal';
 import { remainingOf, isOverdue } from '../utils/loan';
 
 const BorrowerDashboard = () => {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [requests, setRequests] = useState([]);
     const [borrowed, setBorrowed] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +43,19 @@ const BorrowerDashboard = () => {
     useEffect(() => {
         load();
     }, []);
+
+    useEffect(() => {
+        const repayId = searchParams.get('repay');
+        if (!repayId || borrowed.length === 0) return;
+        const match = borrowed.find((t) => t._id === repayId && t.status === 'active');
+        if (match) {
+            setSelectedTx(match);
+            setRepayAmount(String(remainingOf(match)));
+            const next = new URLSearchParams(searchParams);
+            next.delete('repay');
+            setSearchParams(next, { replace: true });
+        }
+    }, [borrowed, searchParams, setSearchParams]);
 
     const getStatusIcon = (status) => {
         switch (status) {

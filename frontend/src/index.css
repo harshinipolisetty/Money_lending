@@ -164,6 +164,50 @@
     color: #3d554c;
   }
 
+  .btn-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    background: #0d3b31;
+    color: #fffdf8;
+    box-shadow: 0 8px 16px -12px rgba(13, 59, 49, 0.7);
+  }
+
+  .btn-compact:hover,
+  .btn-compact:focus-visible {
+    background: #155544;
+    color: #fffdf8;
+  }
+
+  .btn-compact-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border-radius: 9999px;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    background: #f7eed4;
+    border: 1px solid #e0c27a;
+    color: #0d3b31;
+  }
+
+  .btn-compact-gold:hover,
+  .btn-compact-gold:focus-visible {
+    background: #e0c27a;
+    color: #08251f;
+  }
+
   .btn-danger {
     display: inline-flex;
     align-items: center;

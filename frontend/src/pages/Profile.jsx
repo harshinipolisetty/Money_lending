@@ -7,6 +7,7 @@ import { formatDate } from '../utils/formatDate';
 import StatCard from '../components/StatCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import QRModal from '../components/QRModal';
+import SharePaySheet from '../components/SharePaySheet';
 
 const Profile = () => {
     const { user, logout, updateUpi, refreshProfile } = useAuth();
@@ -18,6 +19,7 @@ const Profile = () => {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [showQr, setShowQr] = useState(false);
+    const [shareOpen, setShareOpen] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -122,12 +124,15 @@ const Profile = () => {
                         />
                     </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                     <button type="submit" disabled={saving} className="btn-primary">
                         {saving ? 'Saving...' : 'Save and regenerate QR'}
                     </button>
                     <button type="button" onClick={() => setShowQr(true)} className="btn-ghost">
                         View my QR
+                    </button>
+                    <button type="button" onClick={() => setShareOpen(true)} className="btn-ghost border border-sand-200">
+                        Share UPI / WhatsApp
                     </button>
                 </div>
             </form>
@@ -151,6 +156,12 @@ const Profile = () => {
             </div>
 
             <QRModal open={showQr} onClose={() => setShowQr(false)} user={user} title="Your UPI QR" />
+            <SharePaySheet
+                open={shareOpen}
+                onClose={() => setShareOpen(false)}
+                user={user}
+                note="a LendLoop payment"
+            />
         </div>
     );
 };

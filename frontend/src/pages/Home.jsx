@@ -120,13 +120,13 @@ const Home = () => {
             <div className="grid lg:grid-cols-3 gap-5">
                 <div className="lg:col-span-2 surface p-6 sm:p-7">
                     <div className="flex items-center justify-between mb-5">
-                        <h2 className="font-display text-2xl text-moss-900">Recent activity</h2>
+                        <h2 className="font-display text-2xl text-moss-900">Recent loans</h2>
                         <Link to="/transactions" className="text-sm font-semibold text-moss-800 hover:text-gold-600">
                             View all
                         </Link>
                     </div>
                     {recent.length === 0 ? (
-                        <p className="text-sm text-moss-800/60 py-10 text-center">No activity yet — add your first loan.</p>
+                        <p className="text-sm text-moss-800/60 py-10 text-center">No loans yet — add your first one.</p>
                     ) : (
                         <ul className="divide-y divide-sand-200">
                             {recent.map((t) => (
