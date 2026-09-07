@@ -274,6 +274,19 @@ npm start
 
 Frontend: `http://localhost:5173`. API: `http://localhost:5000`.
 
+### Use on another laptop (same Wi‑Fi)
+
+`localhost` on someone else’s laptop is **their** PC, not yours. Keep **your** backend + frontend running, then:
+
+1. MongoDB Atlas → Network Access → allow `0.0.0.0/0` (or every classmate’s IP).
+2. Windows Firewall: allow Node on ports **5000** and **5173**.
+3. Restart Vite after pulling these proxy changes. In the frontend terminal you should see a **Network** URL like `http://192.168.x.x:5173`.
+4. Other laptops open **that Network URL**, not `localhost`.
+
+Friends cloning the repo still need their own `backend/.env` (`MONGO_URI`, `JWT_SECRET`) plus Atlas access. Your `.env` is not in git.
+
+For **anyone on the internet** (Vercel link, WhatsApp, college demo), a laptop on Wi‑Fi is not enough. Deploy Express (Render) and set Vercel `VITE_API_URL` as below.
+
 ### Environment variables (backend)
 
 | Variable | Purpose |
@@ -290,6 +303,32 @@ Frontend: `http://localhost:5173`. API: `http://localhost:5000`.
 | `NODE_ENV` | `development` enables request logs |
 
 Do not commit `.env` or paste Twilio/SendGrid secrets into chat or git.
+
+## Deploying the frontend on Vercel
+
+Vercel only hosts the **React app**. Login talks to Express on another host. `money-lending1.vercel.app` currently calls `http://localhost:5000/api`, which does not exist on the internet, so login fails.
+
+1. Deploy the **backend** (Render, Railway, Fly.io, or similar) with `NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET`, and:
+
+```
+CLIENT_URL=https://money-lending1.vercel.app,http://localhost:5173
+```
+
+Atlas Network Access must allow the backend host (`0.0.0.0/0` if you cannot add a static IP).
+
+2. In the **Vercel** project → Settings → Environment Variables (Production):
+
+```
+VITE_API_URL=https://YOUR-BACKEND-HOST/api
+```
+
+Use `https`, no trailing slash except the `/api` path. Example: `https://lendloop-api.onrender.com/api`
+
+3. **Redeploy** the frontend. Vite bakes `VITE_API_URL` in at **build** time. Changing the variable without a new deploy does nothing.
+
+4. Confirm `https://YOUR-BACKEND-HOST/api/health` returns `{ "success": true }` in the browser.
+
+Local `frontend/.env` stays `http://localhost:5000/api` for development only. Do not rely on that file for Vercel.
 
 ## Test users
 

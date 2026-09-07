@@ -4,11 +4,7 @@ import { io } from 'socket.io-client';
 import useAuth from '../hooks/useAuth';
 import { timeAgo } from '../utils/timeAgo';
 import * as notificationService from '../services/notificationService';
-
-const socketOrigin = () => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    return String(apiUrl).replace(/\/api\/?$/, '');
-};
+import { getSocketOrigin } from '../utils/apiBase';
 
 const NotificationBell = () => {
     const { token } = useAuth();
@@ -31,9 +27,11 @@ const NotificationBell = () => {
         if (!token) return undefined;
         load();
 
-        const socket = io(socketOrigin(), {
+        const socket = io(getSocketOrigin(), {
             auth: { token },
-            transports: ['websocket', 'polling']
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: 8
         });
 
         socket.on('notification', (payload) => {

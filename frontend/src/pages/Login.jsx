@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import useAuth from '../hooks/useAuth';
 import AuthLayout from '../components/AuthLayout';
+import { getApiBaseUrl } from '../utils/apiBase';
 
 const schema = z.object({
     email: z.string().email({ message: 'Invalid email address' }),
@@ -35,10 +36,14 @@ const Login = () => {
             navigate('/dashboard');
         } catch (err) {
             const offline = err.request && !err.response;
+            const onLocalPage = typeof window !== 'undefined'
+                && ['localhost', '127.0.0.1'].includes(window.location.hostname);
             setError(
                 err.response?.data?.message
                 || (offline
-                    ? 'Cannot reach the API. Start the backend on port 5000, then use http://localhost:5173'
+                    ? (onLocalPage
+                        ? 'This is the local app, not the shared site. On another laptop open https://money-lending1.vercel.app — do not open localhost:5173.'
+                        : `Cannot reach ${getApiBaseUrl()}. Wait up to a minute for Render to wake, then retry. Confirm https://money-lending-1-5xq3.onrender.com/api/health opens.`)
                     : 'Login failed. Please try again.')
             );
         } finally {
